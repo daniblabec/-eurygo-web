@@ -1,0 +1,16 @@
+# Bloquear ejecución PHP en uploads de imágenes (defensa en profundidad)
+# Mismo patrón que /uploads/cursos/.htaccess
+# Compatible con PHP-FPM (OVH) y mod_php
+
+<FilesMatch "\.(php|phtml|phar|php3|php4|php5|php7|php8|pht|cgi|pl|py|rb|sh)$">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_mime.c>
+  RemoveHandler .php .phtml .phar .php3 .php4 .php5 .php7 .php8 .pht
+  RemoveType    .php .phtml .phar .php3 .php4 .php5 .php7 .php8 .pht
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>

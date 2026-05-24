@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 100" width="100%" height="100%">
+    <defs>
+        <linearGradient id="pinGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#7DD3FC" />
+            <stop offset="50%" stop-color="#38BDF8" />
+            <stop offset="100%" stop-color="#0284C7" />
+        </linearGradient>
+
+        <linearGradient id="planeLight" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FDE68A" />
+            <stop offset="100%" stop-color="#FBBF24" />
+        </linearGradient>
+        <linearGradient id="planeMed" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FBBF24" />
+            <stop offset="100%" stop-color="#F59E0B" />
+        </linearGradient>
+        <linearGradient id="planeDark" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B" />
+            <stop offset="100%" stop-color="#D97706" />
+        </linearGradient>
+
+        <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#D97706" />
+            <stop offset="100%" stop-color="#F59E0B" />
+        </linearGradient>
+        
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;800&amp;display=swap');
+            .text-brand-white { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 46px; fill: #FFFFFF; letter-spacing: -1px; }
+            .text-sub-white { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11.5px; fill: #E2E8F0; letter-spacing: 3.5px; }
+        </style>
+    </defs>
+
+    <g transform="translate(15, 5)">
+        <ellipse cx="40" cy="88" rx="14" ry="3" fill="#000000" opacity="0.2" />
+
+        <polygon points="0,-5 1.5,-1.5 5,-1.5 2,1 3,5 0,2.5 -3,5 -2,1 -5,-1.5 -1.5,-1.5" transform="translate(6, 40) scale(0.5)" fill="#FBBF24" />
+        <polygon points="0,-5 1.5,-1.5 5,-1.5 2,1 3,5 0,2.5 -3,5 -2,1 -5,-1.5 -1.5,-1.5" transform="translate(10, 22) scale(0.7)" fill="#F59E0B" />
+        <polygon points="0,-5 1.5,-1.5 5,-1.5 2,1 3,5 0,2.5 -3,5 -2,1 -5,-1.5 -1.5,-1.5" transform="translate(24, 8) scale(0.9)" fill="#D97706" />
+
+        <path d="M 22,60 Q 30,52 38,44" fill="none" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4,5" opacity="0.8"/>
+
+        <path d="M 40,85 C 20,65 12,48 12,38 A 28,28 0 0,1 58,16" fill="none" stroke="url(#pinGradLight)" stroke-width="7" stroke-linecap="round" />
+        <path d="M 40,85 C 55,70 65,55 67,45" fill="none" stroke="url(#pinGradLight)" stroke-width="7" stroke-linecap="round" />
+
+        <!-- SOMBRA DEL AVIÓN (Plana) -->
+        <g transform="translate(2, 4)" fill="#000000" opacity="0.4">
+            <polygon points="68,12 28,36 44,40" />
+            <polygon points="68,12 44,40 54,44" />
+            <polygon points="44,40 48,56 54,44" />
+        </g>
+        
+        <!-- AVIÓN DE PAPEL -->
+        <g>
+            <polygon points="68,12 28,36 44,40" fill="url(#planeLight)" />
+            <polygon points="68,12 44,40 54,44" fill="url(#planeMed)" />
+            <polygon points="44,40 48,56 54,44" fill="url(#planeDark)" />
+        </g>
+    </g>
+
+    <text x="105" y="58" class="text-brand-white">
+        Eury<tspan fill="url(#goldText)">Go</tspan>
+    </text>
+    <text x="108" y="78" class="text-sub-white">
+        MOBILITY EXPERIENCE
+    </text>
+</svg>

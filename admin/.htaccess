@@ -1,0 +1,7 @@
+# EuryGo Admin — Seguridad
+
+# Denegar acceso directo a partials
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^partials/ - [F,L]
+</IfModule>

@@ -1,0 +1,41 @@
+# EuryGo — Seguridad raíz
+
+# Desactivar listado de directorios en todo el sitio
+Options -Indexes
+
+# Proteger config.php de acceso directo
+<Files "config.php">
+  Order Allow,Deny
+  Deny from all
+</Files>
+
+# Proteger directorio includes
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^includes/ - [F,L]
+</IfModule>
+
+# Cabeceras de seguridad
+<IfModule mod_headers.c>
+  # HSTS: forzar HTTPS durante 1 año
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+
+  # Evitar que la web se cargue en iframes externos
+  Header always set X-Frame-Options "SAMEORIGIN"
+
+  # Evitar MIME sniffing
+  Header always set X-Content-Type-Options "nosniff"
+
+  # Controlar información de referrer
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Limitar permisos del navegador
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+
+  # Protección XSS legacy (navegadores antiguos)
+  Header always set X-XSS-Protection "1; mode=block"
+
+  # Eliminar cabecera X-Powered-By
+  Header unset X-Powered-By
+  Header always unset X-Powered-By
+</IfModule>

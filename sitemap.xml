@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Home -->
+  <url>
+    <loc>https://www.eurygo.com/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.eurygo.com/"/>
+    <lastmod>2025-03-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.eurygo.com/en/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.eurygo.com/"/>
+    <lastmod>2025-03-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Blog listing -->
+  <url>
+    <loc>https://www.eurygo.com/blog/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/blog/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/blog/"/>
+    <lastmod>2025-03-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.eurygo.com/en/blog/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/blog/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/blog/"/>
+    <lastmod>2025-03-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Blog articles -->
+  <url>
+    <loc>https://www.eurygo.com/blog/como-conseguir-acreditacion-erasmus-plus-centro/</loc>
+    <lastmod>2025-03-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.eurygo.com/blog/guia-financiacion-erasmus-escolar/</loc>
+    <lastmod>2025-02-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.eurygo.com/blog/agencias-partner-erasmus/</loc>
+    <lastmod>2025-02-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.eurygo.com/blog/ies-movilidad-europea-caso-exito/</loc>
+    <lastmod>2025-01-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Legal pages ES -->
+  <url>
+    <loc>https://www.eurygo.com/privacidad/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/privacidad/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/privacy/"/>
+    <lastmod>2025-03-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://www.eurygo.com/cookies/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/cookies/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/cookies/"/>
+    <lastmod>2025-03-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://www.eurygo.com/aviso-legal/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/aviso-legal/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/legal-notice/"/>
+    <lastmod>2025-03-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <!-- Legal pages EN -->
+  <url>
+    <loc>https://www.eurygo.com/en/privacy/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/privacidad/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/privacy/"/>
+    <lastmod>2025-03-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://www.eurygo.com/en/cookies/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/cookies/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/cookies/"/>
+    <lastmod>2025-03-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://www.eurygo.com/en/legal-notice/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.eurygo.com/aviso-legal/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.eurygo.com/en/legal-notice/"/>
+    <lastmod>2025-03-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+</urlset>
