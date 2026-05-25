@@ -85,15 +85,84 @@ Si en algún momento ves que **falta algo importante** después de un git clone
 ## Y la base de datos
 
 Git **no** captura la base de datos MySQL. Para los scripts de migración
-(`admin/setup/update_v*.php`) que SÍ tocan la BD, antes de ejecutar en producción:
+(`admin/setup/update_v*.php`) que SÍ tocan la BD, hay un script propio que
+descarga un dump comprimido directamente desde el navegador:
 
-1. Entra a phpMyAdmin de OVH.
-2. Exporta a SQL las tablas afectadas (en update_v8 fueron `cursos`,
-   `cursos_programa`, `cursos_ediciones`).
-3. Guarda el dump en una carpeta local fuera del repo (también está en
-   `.gitignore` la carpeta `backups/`).
-4. Ejecuta el script de migración.
-5. Si algo sale mal, importas el dump y vuelves al estado anterior.
+### Backup automático antes de cada migración
 
-Esto lo podemos automatizar con un script bash que use `mysqldump` y descargue
-por SSH/FTP. Pídelo cuando quieras.
+**1.** Logueado como admin, abre en el navegador:
+
+```
+https://www.eurygo.com/admin/setup/backup-db.php
+```
+
+Esto inicia la descarga inmediata de un fichero
+`eurygo_backup_AAAA-MM-DD_HHMMSS.sql.gz` con TODA la base de datos.
+
+**2.** Mueve el fichero descargado a:
+
+```
+C:\Users\PC AOE\Desktop\Claude Code\Empresa\eurygo-web\backups\
+```
+
+(La carpeta `backups/` está en `.gitignore`, no se sube al repo.)
+
+**3.** Ahora puedes ejecutar el `update_v*.php` con red de seguridad.
+
+### Backup solo de las tablas afectadas (más rápido)
+
+Si la migración solo toca ciertas tablas (p.ej. update_v8 toca `cursos`,
+`cursos_programa`, `cursos_ediciones`):
+
+```
+https://www.eurygo.com/admin/setup/backup-db.php?tablas=cursos,cursos_programa,cursos_ediciones
+```
+
+Descarga un fichero más pequeño con solo esas tablas. Útil para restauraciones
+quirúrgicas.
+
+### Dump en texto plano (sin comprimir)
+
+Si quieres inspeccionar el SQL a ojo antes de guardarlo:
+
+```
+https://www.eurygo.com/admin/setup/backup-db.php?formato=sql
+```
+
+Descarga `.sql` plano en vez de `.sql.gz`.
+
+### Restaurar desde un dump
+
+Si una migración rompió algo:
+
+**1.** Entra a phpMyAdmin de OVH (panel OVH → Bases de datos → phpMyAdmin).
+
+**2.** Selecciona la base de datos `eurygoceurygodb` → pestaña **Importar**.
+
+**3.** Sube el `.sql.gz` (phpMyAdmin lo descomprime al vuelo) o el `.sql`
+si lo tienes en texto plano.
+
+**4.** Pulsa **Continuar**. En menos de un minuto la BD vuelve al estado del dump.
+
+⚠ La restauración **borra los registros añadidos después del dump**
+(inscripciones nuevas a cursos, comentarios, etc.). Para una restauración
+selectiva — solo las tablas tocadas por la migración — abre el `.sql` en un
+editor, copia las líneas de las tablas que quieres restaurar y pégalas en
+phpMyAdmin → SQL → Ejecutar.
+
+### Buena práctica
+
+Antes de subir y ejecutar cualquier `update_v*.php`:
+
+1. `git status` y `git commit` del estado actual del código local.
+2. Backup BD con el script de arriba → mover a `backups/`.
+3. Subir el `update_vX.php` al servidor por FTP.
+4. Abrirlo en el navegador, modo preview (sin parámetros).
+5. Confirmar lo que va a hacer.
+6. Lanzar con `?mode=apply&confirm=YES`.
+7. Verificar en la web pública que no se rompió nada.
+8. Borrar el `update_vX.php` del servidor (no del repo).
+9. `git commit` final si el código local también cambió.
+
+Si en el paso 7 algo se rompió: restaurar el dump del paso 2 + `git revert`
+del código si aplica.
