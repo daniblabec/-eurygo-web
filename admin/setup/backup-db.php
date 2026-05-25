@@ -1,62 +1,67 @@
 <?php
 /**
- * Backup de la base de datos — descarga directa como .sql.gz
+ * Backup de la base de datos — descarga como .sql.gz o .sql
  *
  * USO:
  *   /admin/setup/backup-db.php
- *     → dump completo de TODAS las tablas
+ *     → dump completo de TODAS las tablas (.sql.gz)
  *
  *   /admin/setup/backup-db.php?tablas=cursos,cursos_programa,cursos_ediciones
  *     → solo las tablas indicadas (separadas por coma)
  *
  *   /admin/setup/backup-db.php?formato=sql
- *     → sin comprimir (texto plano .sql, más fácil de inspeccionar)
+ *     → sin comprimir (texto plano .sql)
  *
- * Requiere sesión admin. El fichero se descarga al navegador y se guarda
- * donde el navegador descargue por defecto (normalmente /Downloads).
+ * Requiere sesión admin. Recomendado antes de cualquier update_v*.php
+ * que toque la BD.
  *
- * RECOMENDACIÓN: ejecutar antes de cualquier update_v*.php que toque la BD.
- *   1. Abre esta URL → descarga el .sql.gz a /Downloads
- *   2. Muévelo a `eurygo-web/backups/` en tu local (la carpeta está en .gitignore)
- *   3. Ejecuta el update_vX.php
- *   4. Si algo sale mal: importa el dump en phpMyAdmin de OVH
- *
- * El dump genera SQL portable y compatible con phpMyAdmin / mysqldump:
- *   - DROP TABLE IF EXISTS + CREATE TABLE (de SHOW CREATE TABLE)
- *   - INSERTs uno por fila (sin batch — más lento pero más legible y resistente
- *     a max_allowed_packet bajos en OVH)
- *   - SET FOREIGN_KEY_CHECKS=0 al inicio y =1 al final
+ * NOTA TÉCNICA: el dump se construye en memoria (no streaming) para
+ * evitar conflictos con output_buffering y zlib.output_compression que
+ * suelen estar activos en hosting OVH. Para BDs muy grandes (>100MB)
+ * podría dar OOM — en ese caso bajar memory_limit a la realidad del
+ * hosting y dumpear por tablas con ?tablas=...
  */
 
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/auth.php';
 requiere_login();
 
-// BD pueden ser pesadas — sin límite de tiempo ni memoria estricto
-@set_time_limit(0);
-@ini_set('memory_limit', '512M');
-ignore_user_abort(true);
+// Resetear todo posible output previo + desactivar zlib auto-compression
+@ini_set('zlib.output_compression', '0');
+while (ob_get_level()) {
+    ob_end_clean();
+}
 
-$pdo = get_db();
-$pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+@set_time_limit(300);
+@ini_set('memory_limit', '1024M');
+ignore_user_abort(false);
 
-// ── Obtener lista de tablas existentes ──
+try {
+    $pdo = get_db();
+} catch (Throwable $e) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('Error de conexión a BD: ' . $e->getMessage());
+}
+
+// ── Lista de tablas existentes ──
 $todas_tablas = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
 
 // ── Filtrado por parámetro ?tablas= ──
 $param_tablas = trim($_GET['tablas'] ?? '');
 if ($param_tablas !== '') {
     $solicitadas = array_filter(array_map('trim', explode(',', $param_tablas)));
-    // Validar formato (solo alfanuméricos + underscore) — defensa contra SQL injection
     foreach ($solicitadas as $t) {
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $t)) {
             http_response_code(400);
+            header('Content-Type: text/plain; charset=utf-8');
             exit('Nombre de tabla inválido: ' . htmlspecialchars($t));
         }
     }
     $tablas = array_values(array_intersect($todas_tablas, $solicitadas));
     if (empty($tablas)) {
         http_response_code(404);
+        header('Content-Type: text/plain; charset=utf-8');
         exit('Ninguna tabla coincide con: ' . htmlspecialchars($param_tablas));
     }
 } else {
@@ -64,55 +69,31 @@ if ($param_tablas !== '') {
 }
 
 // ── Formato: gzip por defecto, sql plano con ?formato=sql ──
-$formato = $_GET['formato'] ?? 'gz';
+$formato    = $_GET['formato'] ?? 'gz';
 $comprimido = $formato !== 'sql';
 
-// ── Headers de descarga ──
-$ts = date('Y-m-d_His');
-$tags = $param_tablas ? '_' . preg_replace('/[^a-z0-9]+/i', '-', $param_tablas) : '';
-$ext  = $comprimido ? 'sql.gz' : 'sql';
-$filename = "eurygo_backup_{$ts}{$tags}.{$ext}";
+// ── Construir el dump COMPLETO en memoria ──
+$sql  = "-- ─────────────────────────────────────────────────\n";
+$sql .= "-- EuryGo MySQL dump\n";
+$sql .= "-- Generated: " . date('c') . "\n";
+$sql .= "-- Database:  " . DB_NAME . "\n";
+$sql .= "-- Tables:    " . count($tablas) . " (" . implode(', ', $tablas) . ")\n";
+$sql .= "-- ─────────────────────────────────────────────────\n\n";
+$sql .= "SET NAMES utf8mb4;\n";
+$sql .= "SET FOREIGN_KEY_CHECKS=0;\n";
+$sql .= "SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n\n";
 
-header('Content-Type: ' . ($comprimido ? 'application/gzip' : 'application/sql'));
-header('Content-Disposition: attachment; filename="' . $filename . '"');
-header('Cache-Control: no-store, no-cache, must-revalidate');
-header('Pragma: no-cache');
-
-// ── Apertura del stream (gzip directo a php://output o stdout) ──
-if ($comprimido) {
-    $out = gzopen('php://output', 'wb6');
-    $write = function(string $s) use ($out) { gzwrite($out, $s); };
-    $close = function() use ($out) { gzclose($out); };
-} else {
-    $write = function(string $s) { echo $s; };
-    $close = function() {};
-}
-
-// ── Cabecera del dump ──
-$write("-- ─────────────────────────────────────────────────\n");
-$write("-- EuryGo MySQL dump\n");
-$write("-- Generated: " . date('c') . "\n");
-$write("-- Database:  " . DB_NAME . "\n");
-$write("-- Tables:    " . count($tablas) . " (" . implode(', ', $tablas) . ")\n");
-$write("-- ─────────────────────────────────────────────────\n\n");
-$write("SET NAMES utf8mb4;\n");
-$write("SET FOREIGN_KEY_CHECKS=0;\n");
-$write("SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n\n");
-
-// ── Por cada tabla ──
 foreach ($tablas as $tabla) {
-    // SHOW CREATE TABLE
     $row = $pdo->query("SHOW CREATE TABLE `$tabla`")->fetch(PDO::FETCH_ASSOC);
     $create_sql = $row['Create Table'] ?? null;
     if (!$create_sql) continue;
 
-    $write("-- ─────────────────────────────────────────────────\n");
-    $write("-- Table: `$tabla`\n");
-    $write("-- ─────────────────────────────────────────────────\n");
-    $write("DROP TABLE IF EXISTS `$tabla`;\n");
-    $write($create_sql . ";\n\n");
+    $sql .= "-- ─────────────────────────────────────────────────\n";
+    $sql .= "-- Table: `$tabla`\n";
+    $sql .= "-- ─────────────────────────────────────────────────\n";
+    $sql .= "DROP TABLE IF EXISTS `$tabla`;\n";
+    $sql .= $create_sql . ";\n\n";
 
-    // INSERTs en streaming (cursor no buferizado)
     $stmt = $pdo->query("SELECT * FROM `$tabla`");
     $cols_sql = null;
     $contador = 0;
@@ -131,19 +112,40 @@ foreach ($tablas as $tabla) {
                 $vals[] = $pdo->quote((string)$v);
             }
         }
-        $write("INSERT INTO `$tabla` ($cols_sql) VALUES (" . implode(',', $vals) . ");\n");
+        $sql .= "INSERT INTO `$tabla` ($cols_sql) VALUES (" . implode(',', $vals) . ");\n";
         $contador++;
-        // Flush periódico para no acumular en buffer
-        if ($contador % 200 === 0) {
-            @ob_flush();
-            @flush();
-        }
     }
     $stmt->closeCursor();
-    $write("\n-- (" . $contador . " filas)\n\n");
+    $sql .= "\n-- ($contador filas)\n\n";
 }
 
-$write("SET FOREIGN_KEY_CHECKS=1;\n");
-$write("-- ─── Fin del dump ───\n");
-$close();
+$sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+$sql .= "-- ─── Fin del dump ───\n";
+
+// ── Preparar payload final + cabeceras ──
+$ts       = date('Y-m-d_His');
+$tags     = $param_tablas ? '_' . preg_replace('/[^a-z0-9]+/i', '-', $param_tablas) : '';
+$ext      = $comprimido ? 'sql.gz' : 'sql';
+$filename = "eurygo_backup_{$ts}{$tags}.{$ext}";
+
+if ($comprimido) {
+    $payload      = gzencode($sql, 6);
+    $content_type = 'application/gzip';
+} else {
+    $payload      = $sql;
+    $content_type = 'application/sql; charset=utf-8';
+}
+unset($sql);
+
+header('Content-Type: ' . $content_type);
+header('Content-Disposition: attachment; filename="' . $filename . '"');
+header('Content-Length: ' . strlen($payload));
+header('Content-Transfer-Encoding: binary');
+header('Cache-Control: no-store, no-cache, must-revalidate, private');
+header('Pragma: no-cache');
+header('Expires: 0');
+// Forzar identity para que mod_deflate/zlib no recomprima
+header('Content-Encoding: identity');
+
+echo $payload;
 exit;
