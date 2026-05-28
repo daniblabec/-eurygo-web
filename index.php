@@ -281,7 +281,7 @@ try {
 <?php endif; ?>
           </div>
         </div>
-        <div class="grid grid--3">
+        <div class="about-pillars">
           <div class="card reveal reveal--delay-1">
             <div class="card__icon card__icon--blue">
               <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
@@ -296,12 +296,13 @@ try {
             <h3 data-i18n="about_card2_title">Jobshadowing B2B</h3>
             <p data-i18n="about_card2_text">Partnerships de alto nivel en la provincia de Cádiz. Inmersión profesional y cultural completa: bodegas de Jerez, Real Escuela Andaluza del Arte Ecuestre y flamenco auténtico.</p>
           </div>
-          <div class="card reveal reveal--delay-3">
+          <div class="card card--feature reveal reveal--delay-3">
             <div class="card__icon card__icon--green">
               <svg viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
             </div>
             <h3 data-i18n="about_card3_title">Formación Docente KA1</h3>
             <p data-i18n="about_card3_text">Cursos estructurados para docentes europeos: sistema educativo español, IA aplicada a la enseñanza y metodologías activas. Próximas ediciones: febrero y junio 2026.</p>
+            <a href="/cursos/" class="card__cta" data-i18n="about_card3_cta">Ver cursos KA1</a>
           </div>
         </div>
       </div>
@@ -492,52 +493,190 @@ try {
     }
 } catch (Throwable $e) {}
 ?>
-<?php if (!empty($_proximos)): ?>
+<?php
+    // DEBUG (solo localhost): ?force_cursos=N para probar estados 0/1/2/3 sin tocar BD.
+    // Si N > cursos reales, rellena con stubs sinteticos para visualizar el layout.
+    $_is_local = in_array($_SERVER['SERVER_NAME'] ?? '', ['localhost', '127.0.0.1', 'eurygo.test'], true)
+              || in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
+    if ($_is_local && isset($_GET['force_cursos'])) {
+        $_force_n = max(0, min(3, (int)$_GET['force_cursos']));
+        $_proximos = array_slice($_proximos, 0, $_force_n);
+        $_stub_titles = [
+            'Inteligencia Artificial aplicada a la enseñanza',
+            'Sistema educativo español para docentes europeos',
+            'Metodologías activas y gamificación en el aula',
+        ];
+        $_stub_dates = [
+            ['2026-02-16', '2026-02-20', 3],
+            ['2026-04-13', '2026-04-17', 8],
+            ['2026-06-15', '2026-06-19', 12],
+        ];
+        while (count($_proximos) < $_force_n) {
+            $i = count($_proximos);
+            $_proximos[] = [
+                'fecha_inicio'       => $_stub_dates[$i][0],
+                'fecha_fin'          => $_stub_dates[$i][1],
+                'plazas_disponibles' => $_stub_dates[$i][2],
+                'curso_id'           => 9000 + $i,
+                'titulo'             => $_stub_titles[$i],
+                'slug'               => 'demo-curso-' . ($i + 1),
+                'extracto'           => 'Curso sintético para testing de layout en local.',
+                'precio'             => 480 + ($i * 60),
+                'duracion_dias'      => 5,
+                'ubicacion'          => 'Jerez de la Frontera, ES',
+                'imagen'             => '',
+            ];
+        }
+    }
+    // Courses showcase split: first item is protagonist, next 2 are secondaries
+    $_protag = $_proximos[0] ?? null;
+    $_secs   = array_slice($_proximos, 1, 2);
+    $_count_total = count($_proximos);
+?>
     <section class="section" id="courses">
       <div class="container">
         <div class="section__header reveal">
           <span class="section__tag" data-i18n="courses_tag">Formación KA1</span>
-          <h2 data-i18n="courses_title">Próximos cursos de formación</h2>
-          <p data-i18n="courses_subtitle">Cursos estructurados de 5 días para docentes europeos en Jerez de la Frontera. Certificado Europass incluido.</p>
+          <h2 data-i18n="courses_title">Próximas convocatorias en Jerez</h2>
+          <p data-i18n="courses_subtitle">Cinco días, certificado Europass, financiación KA1 — y Jerez como sede. Plazas limitadas por edición.</p>
         </div>
-        <div class="grid grid--3 reveal">
-<?php foreach ($_proximos as $prox): $_fi = !empty($prox['fecha_inicio']) ? strtotime($prox['fecha_inicio']) : null; ?>
-          <a href="/cursos/<?= htmlspecialchars($prox['slug']) ?>/" class="upcoming-card">
-            <div class="upcoming-card__date">
-<?php if ($_fi): ?>
-              <span class="upcoming-card__month"><?= strtoupper(date('M', $_fi)) ?></span>
-              <span class="upcoming-card__day"><?= date('d', $_fi) ?></span>
-              <span class="upcoming-card__year"><?= date('Y', $_fi) ?></span>
+
+<?php if ($_protag): ?>
+        <div class="course-showcase reveal">
+          <article class="course-hero-card">
+            <div class="course-hero-card__image">
+              <svg class="jerez-skyline" viewBox="0 0 480 320" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <g fill="#7DD3FC" opacity="0.65">
+                  <circle cx="60" cy="55" r="1.5"/>
+                  <circle cx="115" cy="80" r="1.2"/>
+                  <circle cx="170" cy="42" r="1"/>
+                  <circle cx="395" cy="68" r="1.4"/>
+                  <circle cx="430" cy="105" r="1"/>
+                  <circle cx="75" cy="135" r="0.8"/>
+                </g>
+                <circle cx="355" cy="125" r="46" fill="#F59E0B" opacity="0.55"/>
+                <circle cx="355" cy="125" r="46" fill="none" stroke="#FBBF24" stroke-width="0.6" opacity="0.45"/>
+                <path d="M 25 50 Q 180 25 350 125" stroke="#FBBF24" stroke-width="1.4" stroke-dasharray="4 5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                <path d="M 0 232 L 480 232 L 480 320 L 0 320 Z" fill="#06192a"/>
+                <g fill="#0C4A6E" opacity="0.45">
+                  <path d="M 20 232 Q 35 215 50 232 Z"/>
+                  <path d="M 70 232 Q 85 215 100 232 Z"/>
+                  <path d="M 120 232 Q 135 215 150 232 Z"/>
+                  <path d="M 380 232 Q 395 215 410 232 Z"/>
+                  <path d="M 430 232 Q 445 215 460 232 Z"/>
+                </g>
+                <ellipse cx="195" cy="210" rx="24" ry="22" fill="#06192a"/>
+                <rect x="178" y="210" width="34" height="22" fill="#06192a"/>
+                <polygon points="193,180 195,168 197,180" fill="#06192a"/>
+                <polygon points="220,232 220,200 250,168 280,200 280,232" fill="#06192a"/>
+                <rect x="298" y="155" width="20" height="77" fill="#06192a"/>
+                <polygon points="295,155 308,138 321,155" fill="#06192a"/>
+                <rect x="307.3" y="128" width="1.5" height="10" fill="#FBBF24" opacity="0.7"/>
+                <rect x="304.5" y="131" width="7" height="1.5" fill="#FBBF24" opacity="0.7"/>
+                <polygon points="50,232 53,200 56,232" fill="#06192a"/>
+                <polygon points="335,232 338,205 341,232" fill="#06192a"/>
+                <rect x="0" y="231" width="480" height="1.5" fill="#FBBF24" opacity="0.15"/>
+              </svg>
+              <span class="course-hero-card__edition-tag">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+<?php if (!empty($_protag['fecha_inicio'])): $_pfi = strtotime($_protag['fecha_inicio']); ?>
+                <span data-i18n="course_hero_edition_label">Próxima</span> · <?= strtoupper(date('M Y', $_pfi)) ?>
 <?php else: ?>
-              <span class="upcoming-card__month">PRÓX</span>
-              <span class="upcoming-card__day">·</span>
-              <span class="upcoming-card__year">2026</span>
+                <span data-i18n="course_hero_edition_featured">Curso destacado</span>
 <?php endif; ?>
+              </span>
             </div>
-            <div class="upcoming-card__info">
-              <h3 class="upcoming-card__title"><?= htmlspecialchars(mb_substr($prox['titulo'], 0, 60)) ?></h3>
-              <div class="upcoming-card__meta">
-<?php if ($_fi && !empty($prox['fecha_fin'])): ?>
-                <?= date('d/m', $_fi) ?> — <?= date('d/m/Y', strtotime($prox['fecha_fin'])) ?> · <?= $prox['duracion_dias'] ?> días
+            <div class="course-hero-card__body">
+              <h3 class="course-hero-card__title">
+                <a href="/cursos/<?= htmlspecialchars($_protag['slug']) ?>/"><?= htmlspecialchars($_protag['titulo']) ?></a>
+              </h3>
+              <div class="course-hero-card__chips">
+                <span class="course-hero-card__chip">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z"/></svg>
+                  <?= (int)$_protag['duracion_dias'] ?> <span data-i18n="course_hero_chip_days">días</span>
+                </span>
+                <span class="course-hero-card__chip">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+                  <?= htmlspecialchars($_protag['ubicacion']) ?>
+                </span>
+                <span class="course-hero-card__chip">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                  Europass
+                </span>
+              </div>
+<?php if (!empty($_protag['fecha_inicio']) && !empty($_protag['fecha_fin'])): $_pfi = strtotime($_protag['fecha_inicio']); $_pff = strtotime($_protag['fecha_fin']); ?>
+              <div class="course-hero-card__dates">
+                <span class="course-hero-card__dates-label" data-i18n="course_hero_dates_label">Edición</span>
+                <span class="course-hero-card__dates-value"><?= date('j', $_pfi) ?>–<?= date('j', $_pff) ?> <?= date('M Y', $_pfi) ?></span>
+              </div>
 <?php else: ?>
-                Próximas convocatorias · <?= $prox['duracion_dias'] ?> días
+              <div class="course-hero-card__dates">
+                <span class="course-hero-card__dates-label" data-i18n="course_hero_dates_label">Edición</span>
+                <span class="course-hero-card__dates-value" data-i18n="course_hero_dates_tbd">Próximas convocatorias 2026</span>
+              </div>
+<?php endif; ?>
+              <div class="course-hero-card__footer">
+                <span class="course-hero-card__price"><?= number_format($_protag['precio'], 0, ',', '.') ?> €
+                  <small data-i18n="course_hero_price_note">por docente, financiable KA1</small>
+                </span>
+<?php if ((int)$_protag['plazas_disponibles'] > 0 && (int)$_protag['plazas_disponibles'] <= 4): ?>
+                <span class="course-hero-card__spots-low"><?= (int)$_protag['plazas_disponibles'] ?> <span data-i18n="course_hero_spots_left">plazas</span></span>
+<?php endif; ?>
+                <a href="/cursos/<?= htmlspecialchars($_protag['slug']) ?>/" class="btn btn--gold" data-i18n="course_hero_cta">Reservar plaza</a>
+              </div>
+            </div>
+          </article>
+
+<?php if (!empty($_secs)): ?>
+          <div class="course-showcase__secondary">
+<?php foreach ($_secs as $sec): $_sfi = !empty($sec['fecha_inicio']) ? strtotime($sec['fecha_inicio']) : null; ?>
+            <a href="/cursos/<?= htmlspecialchars($sec['slug']) ?>/" class="upcoming-card upcoming-card--compact">
+              <div class="upcoming-card__date">
+<?php if ($_sfi): ?>
+                <span class="upcoming-card__month"><?= strtoupper(date('M', $_sfi)) ?></span>
+                <span class="upcoming-card__day"><?= date('d', $_sfi) ?></span>
+                <span class="upcoming-card__year"><?= date('Y', $_sfi) ?></span>
+<?php else: ?>
+                <span class="upcoming-card__month">PRÓX</span>
+                <span class="upcoming-card__day">·</span>
+                <span class="upcoming-card__year">2026</span>
 <?php endif; ?>
               </div>
-              <div class="upcoming-card__meta"><?= htmlspecialchars($prox['ubicacion']) ?></div>
-              <div class="upcoming-card__footer">
-                <span class="upcoming-card__price"><?= number_format($prox['precio'], 0, ',', '.') ?> €</span>
-                <span class="upcoming-card__spots"><?= (int)$prox['plazas_disponibles'] ?> plazas</span>
+              <div class="upcoming-card__info">
+                <h3 class="upcoming-card__title"><?= htmlspecialchars(mb_substr($sec['titulo'], 0, 60)) ?></h3>
+                <div class="upcoming-card__meta">
+<?php if ($_sfi && !empty($sec['fecha_fin'])): ?>
+                  <?= date('d/m', $_sfi) ?>–<?= date('d/m/Y', strtotime($sec['fecha_fin'])) ?> · <?= htmlspecialchars($sec['ubicacion']) ?>
+<?php else: ?>
+                  <?= $sec['duracion_dias'] ?> días · <?= htmlspecialchars($sec['ubicacion']) ?>
+<?php endif; ?>
+                </div>
+                <div class="upcoming-card__footer">
+                  <span class="upcoming-card__price"><?= number_format($sec['precio'], 0, ',', '.') ?> €</span>
+                  <span class="upcoming-card__spots"><?= (int)$sec['plazas_disponibles'] ?> plazas</span>
+                </div>
               </div>
-            </div>
-          </a>
+            </a>
 <?php endforeach; ?>
+          </div>
+<?php endif; ?>
         </div>
-        <div style="text-align:center; margin-top: var(--space-lg);">
+<?php else: ?>
+        <div class="courses-empty reveal">
+          <h3 class="courses-empty__title" data-i18n="courses_empty_title">Próximas ediciones en preparación</h3>
+          <p class="courses-empty__text" data-i18n="courses_empty_text">Estamos cerrando el calendario KA1 de 2026 (febrero y junio en Jerez). Apúntate al newsletter y te avisamos en cuanto se publiquen fechas y precios.</p>
+          <a href="#contact" class="btn btn--primary" data-i18n="courses_empty_cta">Avísame por correo</a>
+        </div>
+<?php endif; ?>
+
+        <div class="courses-foot">
+<?php if ($_count_total > 0): ?>
+          <p class="courses-foot-note"><span data-i18n="courses_foot_count"><?= $_count_total ?> <?= $_count_total === 1 ? 'edición programada' : 'ediciones programadas' ?></span> · <span data-i18n="courses_foot_europass">certificado Europass incluido</span></p>
+<?php endif; ?>
           <a href="/cursos/" class="btn btn--eu" data-i18n="courses_cta">Ver todos los cursos</a>
         </div>
       </div>
     </section>
-<?php endif; ?>
 
     <!-- ===== CÓMO FUNCIONA ===== -->
     <section class="section section--alt" id="how">
