@@ -41,3 +41,9 @@ composer.lock
 *.sql.gz
 *.sql.bak
 backups/
+
+# ─── Herramientas internas (Claude Code / Impeccable) ───
+.agents/
+.claude/
+.impeccable/
+skills-lock.json
