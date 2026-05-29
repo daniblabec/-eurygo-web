@@ -450,7 +450,7 @@ try {
         SELECT
             ce.fecha_inicio, ce.fecha_fin, ce.plazas_disponibles,
             c.id AS curso_id, c.titulo, c.slug, c.extracto,
-            c.precio, c.duracion_dias, c.ubicacion, c.imagen
+            c.precio, c.duracion_dias, c.ubicacion, c.imagen, c.imagen_home
         FROM cursos_ediciones ce
         JOIN cursos c ON c.id = ce.curso_id
         WHERE ce.estado = 'abierta'
@@ -471,19 +471,24 @@ try {
     // Paso 2 — Fallback: si <3, completar con cursos publicados sin edición futura
     if (count($_proximos) < 3) {
         $ids_ya = array_keys($vistos);
-        $placeholders = $ids_ya ? implode(',', array_fill(0, count($ids_ya), '?')) : 'NULL';
         $faltan = 3 - count($_proximos);
+        $exclude_sql = '';
+        if (!empty($ids_ya)) {
+            $placeholders = implode(',', array_fill(0, count($ids_ya), '?'));
+            $exclude_sql = " AND c.id NOT IN ($placeholders)";
+        }
         $stmt_fb = $db->prepare("
             SELECT
                 c.fecha_inicio, c.fecha_fin,
                 GREATEST(COALESCE(c.plazas, 0) - COALESCE(c.inscritos, 0), 0) AS plazas_disponibles,
                 c.id AS curso_id, c.titulo, c.slug, c.extracto,
-                c.precio, c.duracion_dias, c.ubicacion, c.imagen
+                c.precio, c.duracion_dias, c.ubicacion, c.imagen, c.imagen_home
             FROM cursos c
             WHERE c.estado = 'publicado'
               AND c.idioma = 'es'
-              AND c.id NOT IN ($placeholders)
-            ORDER BY (c.fecha_inicio IS NULL), c.fecha_inicio ASC, c.id ASC
+              $exclude_sql
+            ORDER BY (c.imagen_home IS NULL OR c.imagen_home = '') ASC,
+                     (c.fecha_inicio IS NULL), c.fecha_inicio ASC, c.id ASC
             LIMIT $faltan
         ");
         $stmt_fb->execute($ids_ya);
@@ -491,6 +496,14 @@ try {
             $_proximos[] = $row;
         }
     }
+
+    // Priorizar cursos con foto de la home para que aparezcan como protagonistas
+    usort($_proximos, function($a, $b) {
+        $aHas = !empty($a['imagen_home']);
+        $bHas = !empty($b['imagen_home']);
+        if ($aHas === $bHas) return 0;
+        return $aHas ? -1 : 1;
+    });
 } catch (Throwable $e) {}
 ?>
 <?php
@@ -525,6 +538,7 @@ try {
                 'duracion_dias'      => 5,
                 'ubicacion'          => 'Jerez de la Frontera, ES',
                 'imagen'             => '',
+                'imagen_home'        => '',
             ];
         }
     }
@@ -545,6 +559,9 @@ try {
         <div class="course-showcase reveal">
           <article class="course-hero-card">
             <div class="course-hero-card__image">
+<?php if (!empty($_protag['imagen_home'])): ?>
+              <img src="<?= htmlspecialchars($_protag['imagen_home']) ?>" alt="<?= htmlspecialchars($_protag['titulo']) ?>" class="course-hero-card__photo" loading="lazy">
+<?php else: ?>
               <svg class="jerez-skyline" viewBox="0 0 480 320" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <g fill="#7DD3FC" opacity="0.65">
                   <circle cx="60" cy="55" r="1.5"/>
@@ -577,6 +594,7 @@ try {
                 <polygon points="335,232 338,205 341,232" fill="#06192a"/>
                 <rect x="0" y="231" width="480" height="1.5" fill="#FBBF24" opacity="0.15"/>
               </svg>
+<?php endif; ?>
               <span class="course-hero-card__edition-tag">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
 <?php if (!empty($_protag['fecha_inicio'])): $_pfi = strtotime($_protag['fecha_inicio']); ?>

@@ -111,23 +111,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Imagen para la home (miniatura horizontal del curso protagonista)
+        $imagen_home = $curso['imagen_home'] ?? null;
+        if (!empty($_FILES['imagen_home']['name']) && $_FILES['imagen_home']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['imagen_home'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            $mimes_ok = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+            if (in_array($mime, $mimes_ok) && $file['size'] <= 5 * 1024 * 1024) {
+                $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $nombre_archivo = 'curso-home-' . time() . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
+                $destino = __DIR__ . '/../assets/images/blog/' . $nombre_archivo;
+                if (move_uploaded_file($file['tmp_name'], $destino)) {
+                    $imagen_home = '/assets/images/blog/' . $nombre_archivo;
+                }
+            } else {
+                $msg = 'Imagen para la home: solo JPG/PNG/WebP/AVIF, máx 5MB.';
+                $msg_tipo = 'error';
+            }
+        }
+
         if (empty($msg) || $msg_tipo !== 'error') {
             $estado = $accion_post === 'publicar' ? 'publicado' : ($accion_post === 'cancelar' ? 'cancelado' : 'borrador');
 
             if ($es_edicion) {
                 $sql = "UPDATE cursos SET titulo = :titulo, slug = :slug, idioma = :idioma, traduccion_id = :traduccion_id, extracto = :extracto,
-                        descripcion = :descripcion, imagen = :imagen, precio = :precio, duracion_dias = :duracion_dias,
+                        descripcion = :descripcion, imagen = :imagen, imagen_home = :imagen_home, precio = :precio, duracion_dias = :duracion_dias,
                         plazas = :plazas, fecha_inicio = :fecha_inicio, fecha_fin = :fecha_fin, ubicacion = :ubicacion,
                         estado = :estado, destacado = :destacado, meta_title = :meta_title, meta_description = :meta_description
                         WHERE id = :id";
                 $datos[':imagen'] = $imagen;
+                $datos[':imagen_home'] = $imagen_home;
                 $datos[':estado'] = $estado;
                 $datos[':id'] = $id;
                 $db->prepare($sql)->execute($datos);
             } else {
-                $sql = "INSERT INTO cursos (titulo, slug, idioma, traduccion_id, extracto, descripcion, imagen, precio, duracion_dias, plazas, fecha_inicio, fecha_fin, ubicacion, estado, destacado, meta_title, meta_description)
-                        VALUES (:titulo, :slug, :idioma, :traduccion_id, :extracto, :descripcion, :imagen, :precio, :duracion_dias, :plazas, :fecha_inicio, :fecha_fin, :ubicacion, :estado, :destacado, :meta_title, :meta_description)";
+                $sql = "INSERT INTO cursos (titulo, slug, idioma, traduccion_id, extracto, descripcion, imagen, imagen_home, precio, duracion_dias, plazas, fecha_inicio, fecha_fin, ubicacion, estado, destacado, meta_title, meta_description)
+                        VALUES (:titulo, :slug, :idioma, :traduccion_id, :extracto, :descripcion, :imagen, :imagen_home, :precio, :duracion_dias, :plazas, :fecha_inicio, :fecha_fin, :ubicacion, :estado, :destacado, :meta_title, :meta_description)";
                 $datos[':imagen'] = $imagen;
+                $datos[':imagen_home'] = $imagen_home;
                 $datos[':estado'] = $estado;
                 $db->prepare($sql)->execute($datos);
                 $id = (int)$db->lastInsertId();
@@ -216,6 +239,7 @@ $v = [
     'estado'       => $curso['estado'] ?? 'borrador',
     'destacado'    => $curso['destacado'] ?? 0,
     'imagen'       => $curso['imagen'] ?? '',
+    'imagen_home'  => $curso['imagen_home'] ?? '',
     'meta_title'   => $curso['meta_title'] ?? '',
     'meta_description' => $curso['meta_description'] ?? '',
 ];
@@ -451,11 +475,27 @@ $cursos_para_traduccion = $db->query("SELECT id, titulo, idioma, slug FROM curso
           <div class="form-group">
             <label class="form-label">Imagen de portada</label>
             <input type="file" name="imagen" class="form-input" accept="image/jpeg,image/png,image/webp,image/avif">
-            <small style="color:#64748B;">JPG, PNG, WebP o AVIF. Máximo 5 MB.</small>
+            <small style="color:#64748B;">Se usa en la página del curso. JPG, PNG, WebP o AVIF. Máximo 5 MB.</small>
 <?php if ($v['imagen']): ?>
             <div style="margin-top:0.5rem;">
               <img src="<?= htmlspecialchars($v['imagen']) ?>" alt="Portada actual" class="img-preview">
               <p style="font-size:0.8rem; color:#64748B; margin-top:0.25rem;">Imagen actual: <?= htmlspecialchars(basename($v['imagen'])) ?></p>
+            </div>
+<?php endif; ?>
+          </div>
+
+          <div class="form-group" style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid #E2E8F0;">
+            <label class="form-label">Imagen para la home (miniatura grande)</label>
+            <input type="file" name="imagen_home" class="form-input" accept="image/jpeg,image/png,image/webp,image/avif">
+            <small style="color:#64748B;">
+              Solo se usa cuando este curso aparece como protagonista en la home.
+              <strong>Recomendado: foto horizontal</strong> (proporción aprox. 3:2 o 16:9, p. ej. 1200×800 px).
+              JPG, PNG, WebP o AVIF. Máximo 5 MB.
+            </small>
+<?php if ($v['imagen_home']): ?>
+            <div style="margin-top:0.5rem;">
+              <img src="<?= htmlspecialchars($v['imagen_home']) ?>" alt="Miniatura home actual" class="img-preview">
+              <p style="font-size:0.8rem; color:#64748B; margin-top:0.25rem;">Miniatura home actual: <?= htmlspecialchars(basename($v['imagen_home'])) ?></p>
             </div>
 <?php endif; ?>
           </div>

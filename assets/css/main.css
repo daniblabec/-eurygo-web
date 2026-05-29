@@ -2759,6 +2759,15 @@ p {
   display: block;
 }
 
+.course-hero-card__image img.course-hero-card__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 .course-hero-card__edition-tag {
   position: absolute;
   top: var(--space-sm);
